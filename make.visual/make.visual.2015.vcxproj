@@ -22,7 +22,7 @@
     <ProjectGuid>{711C8040-16D2-49AF-AAE0-AF049DF297BA}</ProjectGuid>
     <RootNamespace>makevisual2015</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>wyklad2</ProjectName>
+    <ProjectName>KolkoiKrzyzykBitmapy</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
