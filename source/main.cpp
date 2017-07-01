@@ -9,7 +9,7 @@ enum wynikGry
   remis,
   nierozstrzygniety
 };
-void WstawPrzyciski(HWND hwndMainWindow);
+HWND hwndButton2 = nullptr;
 bool isGameOn = false;
 bool isFirstPlayerTurn = true;
 CHAR Text[200];
@@ -26,6 +26,7 @@ HINSTANCE hInstance;
 HDC Okno;
 HBITMAP hBitmapGameBoard, hBitmapX, hBitmapO, hBitmapStart, hBitmapReset;
 WNDPROC wpOrgButtonProc;
+
 LRESULT CALLBACK ButtonWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch (uMsg)
@@ -33,12 +34,30 @@ LRESULT CALLBACK ButtonWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
   case WM_PAINT:
   {
     //paint the window's client menu
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+    BITMAP board;
+    GetObject(hBitmapStart, sizeof(board), &board);
+    drawButton(hdc);
+    EndPaint(hwnd, &ps);
+    ReleaseDC(hwnd, hdc);
+  }
+  return 0;
+  case WM_DRAWITEM:
+  {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+    BITMAP board;
+    GetObject(hBitmapStart, sizeof(board), &board);
+    drawButton(hdc);
+    EndPaint(hwnd, &ps);
+    ReleaseDC(hwnd, hdc);
   }
   return 0;
   default:
   {
-    //return CallWindowProc(wpOrgButtonProc, hwnd, uMsg, wParam, lParam);
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    return CallWindowProc(wpOrgButtonProc, hwnd, uMsg, wParam, lParam);
+    //return DefWindowProc(hwnd, uMsg, wParam, lParam);
   }
   }
 }
@@ -48,13 +67,14 @@ INT_PTR CALLBACK DialogProc(HWND hwndDig, UINT uMsg, WPARAM wParam, LPARAM lPara
   {
   case WM_INITDIALOG:
   {
-    HWND hwndButton1 = GetDlgItem(hwndDig, IDC_BUTTON1);
-    WNDPROC wpOrgButtonProc = (WNDPROC)SetWindowLong(hwndButton1, -4, (LONG)ButtonWndProc);
+    hwndButton2 = GetDlgItem(hwndDig, IDC_BUTTON2);
+    WNDPROC wpOrgButtonProc = (WNDPROC)SetWindowLong(hwndButton2, -4, (LONG_PTR)ButtonWndProc);
     hBitmapGameBoard = LoadBitmap(hInstance, MAKEINTRESOURCE(105));
     hBitmapX = LoadBitmap(hInstance, MAKEINTRESOURCE(104));
     hBitmapO = LoadBitmap(hInstance, MAKEINTRESOURCE(103));
     hBitmapStart = LoadBitmap(hInstance, MAKEINTRESOURCE(107));
     hBitmapReset = LoadBitmap(hInstance, MAKEINTRESOURCE(106));
+    SendMessage(hwndButton2, BM_SETSTYLE, BS_OWNERDRAW, TRUE);
   }
   return TRUE;
   //GWL_WNDPROC -4
@@ -64,11 +84,12 @@ INT_PTR CALLBACK DialogProc(HWND hwndDig, UINT uMsg, WPARAM wParam, LPARAM lPara
     case BN_CLICKED:
       switch (LOWORD(wParam))
       {
-      case IDC_BUTTON1: 
+      case IDC_BUTTON2: 
       {
         isGameOn=!isGameOn;
         HDC hdc = GetDC(hwndDig);
         drawButton(hdc);
+        UpdateWindow(hwndButton2);
         if (isGameOn == false)
         {
           drawBoard(hdc);
@@ -115,18 +136,15 @@ INT_PTR CALLBACK DialogProc(HWND hwndDig, UINT uMsg, WPARAM wParam, LPARAM lPara
     a = CheckResult();
     Result(hwndDig, a);
   }
-  //wsprintf(szText, "Kliknales myszka x=%d, y=%d", LOWORD(lParam), HIWORD(lParam));
- // MessageBox(hwndDig, szText, TEXT("Klikniecie"), MB_OK);
   return TRUE;
   case WM_PAINT:
   {
-    UpdateWindow(hwndDig);
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwndDig, &ps);
     drawBoard(hdc);
     isGameOn = false;
+    UpdateWindow(hwndButton2);
     drawButton(hdc);
-    //SendDlgItemMessage(hwndDig, IDC_BUTTON1, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBitmapStart);
     int x, y;
     for (int i = 0; i < 9; i++)
     {
@@ -167,7 +185,6 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevinstance, PSTR szCmdLIne,
   HWND hwndMainWindow = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_MAINVIEW), NULL, DialogProc);
   ShowWindow(hwndMainWindow, iCmdShow);
   MSG msg = {};
-  Okno = GetDC(hwndMainWindow);
   while (GetMessage(&msg, NULL, 0, 0))
   {
     TranslateMessage(&msg);
@@ -198,7 +215,7 @@ void drawBoard(HDC hdc)
   hDCBitmap = CreateCompatibleDC(hdc);
   SelectObject(hDCBitmap, hBitmapGameBoard);
   StretchBlt(hdc, 0, 0, 500, 364, hDCBitmap, 0, 0, 500, 364, SRCCOPY);
-  drawButton(hdc);
+  //drawButton(hdc);
   DeleteDC(hDCBitmap);
 }
 void drawButton(HDC hdc)
@@ -208,12 +225,14 @@ void drawButton(HDC hdc)
   if (isGameOn == false)
   {
     SelectObject(hDCBitmap, hBitmapStart);
-    BitBlt(hdc, 535, 135, 144, 107, hDCBitmap, 0, 0, SRCCOPY);
+    BitBlt(hdc, 536, 136, 144, 107, hDCBitmap, 0, 0, SRCCOPY);
+    //StretchBlt(hdc, 536, 136, 144, 107, hDCBitmap, 0, 0, 100, 50, SRCCOPY);
   }
   else
   {
     SelectObject(hDCBitmap, hBitmapReset);
-    BitBlt(hdc, 535, 135, 144, 107, hDCBitmap, 0, 0, SRCCOPY);
+    BitBlt(hdc, 536, 136, 144, 107, hDCBitmap, 0, 0, SRCCOPY);
+    //StretchBlt(hdc, 536, 136, 144, 107, hDCBitmap, 0, 0, 100, 50, SRCCOPY);
   }
   DeleteDC(hDCBitmap);
 }
@@ -272,21 +291,4 @@ void Result(HWND hwndDig, wynikGry a)
   case nierozstrzygniety:;
   default:;
   }
-}
-
-void WstawPrzyciski(HWND hwndMainWindow)
-{
-  HDC hdcNowy = CreateCompatibleDC(Okno);
-  HDC hdc = GetDC(hwndMainWindow);
-  HBITMAP hbmOld = (HBITMAP)SelectObject(hdcNowy, hBitmapStart);
-  BITMAP bmInfo;
-  hdcNowy = CreateCompatibleDC(Okno);
-  hdc = GetDC(hwndMainWindow);
-  SelectObject(hdcNowy, hBitmapStart);
-  hbmOld = (HBITMAP)SelectObject(hdcNowy, hBitmapStart);
-  GetObject(hBitmapStart, sizeof(bmInfo), &bmInfo);
-  BitBlt(hdc, 535, 135, 144, 107, hdcNowy, 0, 0, SRCCOPY);
-  ReleaseDC(hwndMainWindow, hdc);
-  SelectObject(hdcNowy, hbmOld);
-  DeleteDC(hdcNowy);
 }
